@@ -3,10 +3,10 @@
  * PHPWOL - Send wake on lan magic packet from php.
  * PHP Version 5.6.28
  * @package PHPWOL
- * @see https://github.com/andishfr/wol.php/ GitHub project
+ * @see https://github.com/andishfr/wake-on-lan.php/ GitHub project
  * @author Andreas Schaefer <asc@schaefer-it.net>
  * @copyright 2017 Andreas Schaefer
- * @license https://github.com/andishfr/wol.php/LICENSE MIT License
+ * @license https://github.com/AndiSHFR/wake-on-lan.php/blob/master/LICENSE MIT License
  * @note This program is distributed in the hope that it will be useful - WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.
