@@ -286,7 +286,7 @@ if(!$MESSAGE) $MESSAGE = '';
   <div class="container">
 
 		<div class="page-header">
-			<h2><a href="https://github.com/andishfr/wol.php">Wake On LAN</a></h2>
+			<h2><a href="https://github.com/AndiSHFR/wake-on-lan.php">Wake On LAN</a></h2>
 		</div>
 
   	<div class="row">
@@ -317,7 +317,7 @@ if(!$MESSAGE) $MESSAGE = '';
 							<td><input class="form-control" id="cidr" placeholder="24" value="24"></td>
 							<td><input class="form-control" id="port" placeholder="9" value="9"></td>
 							<td><input class="form-control" id="comment" placeholder="my notebook" value=""></td>
-							<td class="align-middle"><button id="wakeItem" class="btn btn-sm btn-block btn-warning" type="button">Wake up!</button></td>
+							<td class="align-middle"><!-- button id="wakeItem" class="btn btn-sm btn-block btn-warning" type="button">Wake up!</button --></td>
 							<td class="align-middle"><button id="addItem" class="btn btn-sm btn-block btn-success" type="button">Add</button></td>
 						</tr>
 					</tfoot>
