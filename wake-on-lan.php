@@ -184,17 +184,82 @@ function wakeOnLan($mac, $ip, $cidr, $port, &$debugOut) {
 
   return $wolResult;
 }
-		
+
+function endWithJsonResponse($responseData) {
+
+	array_walk_recursive($responseData, function(&$value, &$key) {
+		if(is_string($value)) $value = utf8_encode($value);
+	});
+
+	$jsonString = json_encode($responseData, JSON_PRETTY_PRINT);
+
+	if(!$jsonString) {
+		http_response_code(500);
+		die('Internal Server Error! Cannot convert response to JSON.');
+	}
+
+	header('Content-Length: ' . strlen($jsonString) );
+	header('Content-Type: application/json');
+	
+	header('Expires: Mon, 26 Jul 1997 05:00:00:00 GMT');
+	header('Last-Modified: ' . gmdate('D, d M Y H:i:s'));
+  header('Cache-Control: no-cache, must-revalidate');
+	header('Pragma: no-cache');
+	die($jsonString);	
+}
+
+
+
 // Init locale variables
 $MESSAGE= false;     // false -> all is fine, string -> error message
 $DEBUG = [];         // Array of strings containing debug information
 
 // Get the url parameters
+$OP       = isset($_GET['op'])      ? $_GET['op']      : '';
 $MAC      = isset($_GET['mac'])     ? $_GET['mac']     : '';
 $IP       = isset($_GET['ip'])      ? $_GET['ip']      : '';
 $CIDR     = isset($_GET['cidr'])    ? $_GET['cidr']    : '';
 $PORT     = isset($_GET['port'])    ? $_GET['port']    : '';
 $COMMENT  = isset($_GET['comment']) ? $_GET['comment'] : '';
+
+
+// Is it a "Get host state" request?
+if('info'===$OP && '' != $IP) {
+
+ $responseData = [ 'error' => false, 'isUp' => false ];
+
+ $errStr = false;
+ $errCode = 0;
+ $waitTimeoutInSeconds = 3; 
+ if($fp = @fsockopen($IP,3389,$errCode,$errStr,$waitTimeoutInSeconds)){   
+	  fclose($fp);
+  	$responseData['isUp'] = true;
+	} else {
+	$responseData['isUp'] = false;
+	$responseData['errCode'] = $errCode;
+	$responseData['errStr'] = $errStr;
+ } 
+
+ return endWithJsonResponse($responseData);
+}
+
+// Try to send the magic packet if at least a mac address and ip address was supplied
+if('wol'===$OP && ''!==$MAC && '' != $IP) {
+
+	$responseData = [ 'error' => false, 'data' => '' ];
+
+	// Call to wake up the host
+	$MESSAGE = wakeOnLan($MAC, $IP, $CIDR, $PORT, $DEBUG);
+
+	// Keep the message or make it an empty string
+  if(!$MESSAGE) {
+		$responseData['data'] = 'Magic packet has been sent for <strong>' . $MAC. '</strong>. Please wait for the host to come up...';
+	} else {
+		$responseData['error'] = $MESSAGE;
+	}
+	return endWithJsonResponse($responseData);	
+}
+
 
 // Try to send the magic packet if at least a mac address and ip address was supplied
 if(''!==$MAC && '' != $IP) {
@@ -219,7 +284,7 @@ if(!$MESSAGE) $MESSAGE = '';
     <link href="//fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet"> 
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!--link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"-->
  		
 		<!--
     https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cerulean/bootstrap.min.css
@@ -253,30 +318,23 @@ if(!$MESSAGE) $MESSAGE = '';
         font-family: 'Varela Round', 'Segoe UI', 'Trebuchet MS', sans-serif;
       }
   
+			.ui-sortable tr {
+				cursor:pointer;
+			}
+		
+			.ui-sortable tr:hover {
+				background:rgba(244,251,17,0.45);
+			}
+
+	    .modal.modal-wide .modal-dialog { width: 80%; }
+			.modal-wide .modal-body { overflow-y: auto; }
+
       .align-middle { vertical-align: middle !important; }
 
 			.popover2{ display: block !important; max-width: 400px!important; width: auto; }
 
       footer { font-size: 80%; color: #aaa; }
       footer hr { margin-bottom: 5px; }
-
-			pre.bash {
- 				background-color: rgba(0, 0, 0, 0.9);
- 				color: lightgreen;
- 				font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
-				 -webkit-box-shadow: 2px 2px 10px 2px rgba(2,54,14,0.4);
-				 -moz-box-shadow: 2px 2px 10px 2px rgba(2,54,14,0.4);
-				 box-shadow: 2px 2px 10px 2px rgba(2,54,14,0.4);				 
-			}
-
-			.terminal {
- 				background-color: rgba(0, 0, 0, 0.9);
- 				color: lightgreen;
- 				font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
-				 -webkit-box-shadow: 2px 2px 10px 2px rgba(2,54,14,0.4);
-				 -moz-box-shadow: 2px 2px 10px 2px rgba(2,54,14,0.4);
-				 box-shadow: 2px 2px 10px 2px rgba(2,54,14,0.4);				 
-			}
 
     </style>
 
@@ -298,6 +356,7 @@ if(!$MESSAGE) $MESSAGE = '';
 				<table id="items" class="table table-condensed xtable-bordered table-hover">
 					<thead>
 						<tr>
+  						<th>&nbsp;</th>
 							<th>MAC-Address</th>
 							<th>IP-Address or Hostname</th>
 							<th>Network size (CIDR)</th>
@@ -312,9 +371,10 @@ if(!$MESSAGE) $MESSAGE = '';
 
 					<tfoot>
 						<tr>
-							<td><input class="form-control" id="mac" placeholder="00:00:00:00:00:00" value="d8:cb:8a:33:3b:17"></td>
-							<td><input class="form-control" id="ip" placeholder="192.168.0.123" value="172.31.67.1"></td>
-							<td><input class="form-control" id="cidr" placeholder="24" value="24"></td>
+	  					<td>&nbsp;</td>
+							<td><input class="form-control" id="mac" placeholder="00:00:00:00:00:00" value=""></td>
+							<td><input class="form-control" id="ip" placeholder="192.168.0.123" value=""></td>
+							<td><input class="form-control" id="cidr" placeholder="24" value=""></td>
 							<td><input class="form-control" id="port" placeholder="9" value="9"></td>
 							<td><input class="form-control" id="comment" placeholder="my notebook" value=""></td>
 							<td class="align-middle"><!-- button id="wakeItem" class="btn btn-sm btn-block btn-warning" type="button">Wake up!</button --></td>
@@ -334,16 +394,12 @@ if(!$MESSAGE) $MESSAGE = '';
       
 		</div><!-- @end: .row -->
 
-    <div class="row hide">
-      <div class="col-xs-6 col-xs-offset-3"><pre class="bash"><?php echo join($DEBUG, '<br/>'); ?></pre></div>
-    </div><!-- @end: .row -->
-
   </div><!-- @end: .container -->
 
 
 
 	<!-- Export Modal -->
-	<div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModal" aria-hidden="true">
+	<div class="modal modal-wide fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModal" aria-hidden="true">
   	<div class="modal-dialog">
         <div class="modal-content">
         	<div class="modal-header">
@@ -372,7 +428,7 @@ if(!$MESSAGE) $MESSAGE = '';
 
 
 	<!-- Import Modal -->
-	<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModal" aria-hidden="true">
+	<div class="modal modal-wide fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModal" aria-hidden="true">
 	<div class="modal-dialog">
 			<div class="modal-content">
 					<div class="modal-header">
@@ -416,20 +472,11 @@ if(!$MESSAGE) $MESSAGE = '';
 </div>
 
 
-  <!-- html form to manage a POST request to the backend. -->
-	<form id="wakeupForm" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="GET">
-			<input type="hidden" name="mac"     value="<? echo $MAC; ?>">
-			<input type="hidden" name="ip"      value="<? echo $IP; ?>">
-			<input type="hidden" name="cidr"    value="<? echo $CIDR; ?>">
-			<input type="hidden" name="port"    value="<? echo $PORT; ?>">
-			<input type="hidden" name="comment" value="<? echo $COMMENT; ?>">
-	</form>
-
-
   <!-- Script tags are placed at the end of the file to make html appearing faster -->
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"  crossorigin="anonymous"></script>
-  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" integrity="sha256-KM512VNnjElC30ehFwehXjx1YCHPiQkOPmqnrWtpccM=" crossorigin="anonymous"></script>
+	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	
 <script>
 $(function () { 'use strict'
 
@@ -465,6 +512,7 @@ $(function () { 'use strict'
   function addItemToTable(mac, ip, cidr, port, comment) {
 		var $item = $([
 			'<tr>'
+		, '<td><i class="glyphicon glyphicon-thumbs-down text-danger"></i></td>'
 		, '<td>', mac, '</td>'
 		, '<td>', ip, '</td>'
 		, '<td>', cidr, '</td>'
@@ -504,11 +552,59 @@ $(function () { 'use strict'
 		$('#exportData').val(json);
 	}
 
-  $('#wakeupForm').on('submit', function(event) {
-    // event.preventDefault();
-		// console.log($(this).serialize());
-    return true;
-  });
+  var lastUpdateIndex = 1;
+  function updateHostInfo() {
+		console.log()
+		var 
+		    $tr = $('#items tbody tr:nth-child(' + lastUpdateIndex + ')'),
+			  $i = $tr.find('td:first-child >'),
+				item = $tr.data('wol') || {},
+				url= '?op=info&ip=' + item.ip
+				;
+
+    // Now table row found then reset index to 0
+    if(0===$tr.length) lastUpdateIndex = 1; else lastUpdateIndex++;
+
+    // Make ajax request to get the state of the host
+    $.ajax({
+        url: url,
+       type: 'GET',
+       data: null,
+       beforeSend: function(/* xhr */) { 
+				$i
+				  .removeClass('glyphicon-thumbs-down glyphicon-thumbs-up text-danger text-success')
+				  .addClass('glyphicon-eye-open text-muted')
+					;
+			  },
+       success:  function(resp) {
+          if('string' === typeof resp) { resp = { error: resp }; }
+          if(resp && resp.error && resp.error !== '') {
+						return pageNotify(resp.error, 'danger', true, 10000);
+          }
+
+				if(resp.isUp) {
+					$i
+				  .removeClass('glyphicon-eye-open text-muted')
+				  .addClass('glyphicon-thumbs-up text-success')
+					;
+				} else {
+					$i
+				  .removeClass('glyphicon-eye-open text-muted')
+				  .addClass('glyphicon-thumbs-down text-danger')
+					;
+				}
+
+          // Reschedule update
+          setTimeout(updateHostInfo, 5000);
+        },
+       error: function(jqXHR, textStatus, errorThrown ) {
+  				pageNotify('Error ' + jqXHR.status + ' calling "GET ' + uri + '":' + jqXHR.statusText, 'danger', true, 10000);
+        },
+       complete: function(result) { 
+  			}
+      });
+
+	}
 
   $('#addItem').on('click', function(event) {
 		event.preventDefault();
@@ -535,20 +631,44 @@ $(function () { 'use strict'
 	$('#items tbody').on('click', '.wakeItem', function(event) {
 		event.preventDefault();
 
-		var $tr = $(this).closest('tr')
-		  , item = $tr.data('wol')
-			, $form = $('#wakeupForm')
+		var $tr = $(this).closest('tr'),
+		    item = $tr.data('wol'),
+				url= '?op=wol'
 			  ;
 
-    $form.find('[name=mac]').val(item.mac);
-    $form.find('[name=ip]').val(item.ip);
-    $form.find('[name=cidr]').val(item.cidr);
-    $form.find('[name=port]').val(item.port);
-    $form.find('[name=comment]').val(item.comment);
-		$form.trigger('submit');
+    // Make ajax request to get the state of the host
+    $.ajax({
+        url: url,
+       type: 'GET',
+       data: { op:'wol', mac: item.mac, ip: item.ip, cidr: item.cidr, port: item.port},
+       beforeSend: function(/* xhr */) { 
+			  },
+       success:  function(resp) {
+          if('string' === typeof resp) { resp = { error: resp }; }
+          if(resp && resp.error && resp.error !== '') {
+						return pageNotify(resp.error, 'danger', true, 10000);
+          }
+					pageNotify(resp.data, 'success', true, 10000);          
+        },
+       error: function(jqXHR, textStatus, errorThrown ) {
+  				pageNotify('Error ' + jqXHR.status + ' calling "GET ' + uri + '":' + jqXHR.statusText, 'danger', true, 10000);
+        },
+       complete: function(result) { 
+  			}
+      });
 
-		return false;
 	});
+
+
+	  //Helper function to keep table row from collapsing when being sorted
+		var fixHelperModified = function(e, tr) {
+		var $originals = tr.children();
+		var $helper = tr.clone();
+		$helper.children().each(function(index) {
+		  $(this).width($originals.eq(index).width())
+		});
+		return $helper;
+  	};
 
 	$('#importConfiguration').on('click', function(event) {
 		event.preventDefault();
@@ -559,6 +679,12 @@ $(function () { 'use strict'
 		saveTableToLocalStorage();
 		return false;
 	});
+
+  $("#items tbody").sortable({
+    helper: fixHelperModified,
+		stop: function(event,ui) { saveTableToLocalStorage(); }
+	}).disableSelection();
+
 
   var 
 	    STORAGE_ITEMNAME = 'wolItems'
@@ -572,6 +698,8 @@ $(function () { 'use strict'
 	} else {
 		loadTable(localStorage.getItem(STORAGE_ITEMNAME));
 	}
+
+  updateHostInfo();
 
 });
 </script>
