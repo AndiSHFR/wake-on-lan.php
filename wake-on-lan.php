@@ -85,7 +85,7 @@ function wakeOnLan($mac, $ip, $cidr, $port, &$debugOut) {
 			$debugOut[] = __LINE__ . ' : ' . $wolResult;			
 		} else {
 		  // Create the bitmask long from the cidr value
-			$netMask = (1 << 32) - ( 1 << (32 - $cidr));
+			$netMask = -1 << (32 - (int)$cidr);
 			// Create the network address from the long of the ip and the network bitmask
 			$networkAddress = ip2long($ip) & $netMask; 
       // Calulate the size fo the network (number of ip addresses in the subnet)
