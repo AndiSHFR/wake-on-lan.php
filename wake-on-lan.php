@@ -335,6 +335,12 @@ if(!$MESSAGE) $MESSAGE = '';
 				background:rgba(244,251,17,0.45);
 			}
 
+	  			.container-full {
+				margin: 0 auto;
+				width: 100%;
+			}
+  
+	    
 	    .modal.modal-wide .modal-dialog { width: 80%; }
 			.modal-wide .modal-body { overflow-y: auto; }
 
@@ -350,7 +356,7 @@ if(!$MESSAGE) $MESSAGE = '';
   </head>
   <body>
   <!-- Container element for the page body -->
-  <div class="container">
+  <div class="container container-full">
 
 		<div class="page-header">
 			<h2><a href="https://github.com/AndiSHFR/wake-on-lan.php">Wake On LAN</a></h2>
