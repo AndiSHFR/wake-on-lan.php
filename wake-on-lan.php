@@ -115,7 +115,7 @@ function wakeOnLan($mac, $ip, $cidr, $port, &$debugOut) {
 	}		
 		
 	// Can we work with fsockopen/fwrite/fclose?
-	if(!$wolResult &&	function_exists('fsockopen') ) {
+	if(1==1 && !$wolResult &&	function_exists('fsockopen') ) {
 
 		$debugOut[] = __LINE__ . " : Calling fsockopen('udp://$ip', $port, ... )";														
 
@@ -165,12 +165,13 @@ function wakeOnLan($mac, $ip, $cidr, $port, &$debugOut) {
 			}
 
 			if(!$wolResult) {
-				$debug[] = __LINE__ . ' : Sending magic packet using socket-sendto()...';																	
-			  $socket_data = socket_sendto($socket, $buf, strlen($buf), $flags, $addr, $port);
+				$debug[] = __LINE__ . ' : Sending magic packet using socket-sendto()...';		
+				$flags = 0;															
+			  $socket_data = socket_sendto($socket, $magicPacket, strlen($magicPacket), $flags, $ip, $port);
   			if(!$socket_data) {
 					$wolResult = 'Error: ' . socket_strerror($socketResult); 
 					$debug[] = __LINE__ . ' : ' . $wolResult;													
- 				DbOut("A magic packet of ".$socket_data." bytes has been sent via UDP to IP address: ".$addr.":".$port.", using the '".$function."()' function.");
+					//DbOut("A magic packet of ".$socket_data." bytes has been sent via UDP to IP address: ".$addr.":".$port.", using the '".$function."()' function.");
  				}
 			}
 			
