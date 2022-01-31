@@ -6,7 +6,7 @@ Send magic packet from php to wake up a host using "Wake on Lan"
 ```wake-on-lan.php``` started as a ___one file drop in___ tool for waking up computers when they are suspended.
 
 _Note_:
-As there where numerous issues with people using this code, even it worked fine in my environment, at the end of 2021 i decided to refactor the whole thing.
+As there where numerous issues using this code, even it worked fine in my environment, at the end of 2021 i decided to refactor the whole thing.
 
 
 # Changes of the 2021 Release
