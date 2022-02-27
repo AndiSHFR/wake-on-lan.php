@@ -228,7 +228,7 @@ if('CONFIG.SET'===$ajaxOperation && 'POST'==$requestMethod) {
     $phpInput = file_get_contents('php://input');
     $jsonData = json_decode($phpInput);
     $jsonString = json_encode($jsonData, JSON_PRETTY_PRINT);
-    if(!file_put_contents('/' . $configFilename, $jsonString)) {
+    if(!file_put_contents($configFilename, $jsonString)) {
       endWithErrorMessage('Cannot write configuration file.<br/>Please make sure the web server can write to the folder.');
     }
     endWithJsonresponse([ 'status' => 'OK']);  
