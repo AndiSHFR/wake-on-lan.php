@@ -255,15 +255,18 @@ if('HOST.CHECK'===$ajaxOperation) {
 
   foreach($HOST_CHECK_PORTS as $port=>$info) {
     if($responseData['isUp']) break;
-    $responseData['lastPortChecked'] = $port;
     if($fp = @fsockopen($host,$port,$errCode,$errStr,$waitTimeoutInSeconds)){   
       fclose($fp);
       $responseData['isUp'] = true;
       $responseData['info'] = $info;
+      $responseData['errCode'] = '';
+      $responseData['errStr'] = '';
+      $responseData['errorPort'] = '';
     } else {
     $responseData['isUp'] = false;
     $responseData['errCode'] = $errCode;
     $responseData['errStr'] = $errStr;
+    $responseData['errorPort'] = $port;
    }    
   }
 
