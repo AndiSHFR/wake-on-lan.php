@@ -175,11 +175,26 @@ function endWithErrorMessage($message) {
 	die('Internal Server Error! ' . $message);
 }
 
+function iso8859_1_to_utf8(string $s): string {
+  $s .= $s;
+  $len = \strlen($s);
+
+  for ($i = $len >> 1, $j = 0; $i < $len; ++$i, ++$j) {
+      switch (true) {
+          case $s[$i] < "\x80": $s[$j] = $s[$i]; break;
+          case $s[$i] < "\xC0": $s[$j] = "\xC2"; $s[++$j] = $s[$i]; break;
+          default: $s[$j] = "\xC3"; $s[++$j] = \chr(\ord($s[$i]) - 64); break;
+      }
+  }
+
+  return substr($s, 0, $j);
+}
+
 function endWithJsonResponse($responseData, $filename = NULL) {
 
   if($responseData) {
     array_walk_recursive($responseData, function(&$value, &$key) {
-      if(is_string($value)) $value = utf8_encode($value);
+      if(is_string($value)) $value = iso8859_1_to_utf8($value);
     });  
   }
 
