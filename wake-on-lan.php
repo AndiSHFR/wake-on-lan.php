@@ -178,7 +178,7 @@ function endWithErrorMessage($message) {
 function endWithJsonResponse($responseData, $filename = NULL) {
 
   if($responseData) {
-    array_walk_recursive($responseData, function(&$value, &$key) {
+    array_walk_recursive($responseData, function($value, $key) {
       if(is_string($value)) $value = utf8_encode($value);
     });  
   }
@@ -244,7 +244,7 @@ if('CONFIG.DOWNLOAD'===$ajaxOperation) {
 } else
 
 if('HOST.CHECK'===$ajaxOperation) {
-  $HOST_CHECK_PORTS = [ '3389' => '3389 (RDP)', '22' => '22 (SSH)', '80' => '80 (HTTP)', '443' => '443 (HTTPS)' ]; 
+  $HOST_CHECK_PORTS = [ '47984' => '47984 (Sunshine)', '3389' => '3389 (RDP)', '22' => '22 (SSH)', '80' => '80 (HTTP)', '443' => '443 (HTTPS)' ]; 
   $host = safeGet($_GET, 'host', null);
   if(!$host) endWithErrorMessage('Parameter host not set.');
   $responseData = [ 'error' => false, 'isUp' => false ];
